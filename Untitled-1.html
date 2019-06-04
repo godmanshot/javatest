@@ -1,0 +1,308 @@
+<html>
+    <head>
+        <style>
+            html {
+            font-size: 62.5%;
+            box-sizing: border-box;
+            }
+
+            *, *::before, *::after {
+            margin: 0;
+            padding: 0;
+            box-sizing: inherit;
+            }
+
+            .calculator {
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 400px;
+            }
+
+            .calculator-screen {
+            width: 100%;
+            font-size: 2rem;
+            height: 80px;
+            border: none;
+            background-color: #252525;
+            color: #fff;
+            text-align: right;
+            padding-right: 20px;
+            padding-left: 10px;
+            }
+
+            button {
+            height: 60px;
+            background-color: #fff;
+            border-radius: 3px;
+            border: 1px solid #c4c4c4;
+            background-color: transparent;
+            font-size: 2rem;
+            color: #333;
+            background-image: linear-gradient(to bottom,transparent,transparent 50%,rgba(0,0,0,.04));
+            box-shadow: inset 0 0 0 1px rgba(255,255,255,.05), inset 0 1px 0 0 rgba(255,255,255,.45), inset 0 -1px 0 0 rgba(255,255,255,.15), 0 1px 0 0 rgba(255,255,255,.15);
+            text-shadow: 0 1px rgba(255,255,255,.4);
+            }
+
+            button:hover {
+            background-color: #eaeaea;
+            }
+
+            .operator {
+            color: #337cac;
+            }
+
+            .all-clear {
+            background-color: #f0595f;
+            border-color: #b0353a;
+            color: #fff;
+            }
+
+            .all-clear:hover {
+            background-color: #f17377;
+            }
+
+            .equal-sign {
+            background-color: #2e86c0;
+            border-color: #337cac;
+            color: #fff;
+            height: 100%;
+            grid-area: 2 / 4 / 6 / 5;
+            }
+
+            .equal-sign:hover {
+            background-color: #4e9ed4;
+            }
+
+            .calculator-keys {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            grid-gap: 20px;
+            padding: 20px;
+            }
+        </style>
+    </head>
+    <body>
+
+    <div class="calculator">
+
+        <input type="text" class="calculator-screen" id="out" value="0" disabled/>
+
+        <div class="calculator-keys">
+            
+            <button type="button" class="operator" value="+">+</button>
+            <button type="button" class="operator" value="-">-</button>
+            <button type="button" class="operator" value="*">&times;</button>
+            <button type="button" class="operator" value="/">&divide;</button>
+
+            <button type="button" class="digit" value="7">7</button>
+            <button type="button" class="digit" value="8">8</button>
+            <button type="button" class="digit" value="9">9</button>
+
+
+            <button type="button" class="digit" value="4">4</button>
+            <button type="button" class="digit" value="5">5</button>
+            <button type="button" class="digit" value="6">6</button>
+
+
+            <button type="button" class="digit" value="1">1</button>
+            <button type="button" class="digit" value="2">2</button>
+            <button type="button" class="digit" value="3">3</button>
+
+
+            <button type="button" class="digit" value="0">0</button>
+            <button type="button" class="decimal" value=".">.</button>
+            <button type="button" class="all-clear" value="all-clear">AC</button>
+
+            <button type="button" class="equal-sign" value="=">=</button>
+
+        </div>
+    </div>
+
+    <script
+    src="https://code.jquery.com/jquery-3.4.1.min.js"
+    integrity="sha256-CSXorXvZcTkaix6Yvo6HppcZGetbYMGWSFlBw8HfCJo="
+    crossorigin="anonymous"></script>
+    <script>
+        var Operator = function() {};
+
+        Operator.prototype.exec = function(a, b) {};
+        Operator.prototype.character = function() {};
+
+        var PlusOperator = function() {};
+        PlusOperator.prototype = Object.create(Operator.prototype);
+        PlusOperator.prototype.constructor = PlusOperator;
+
+        PlusOperator.prototype.exec = function(a, b) {
+            return a + b;
+        };
+        PlusOperator.prototype.character = function() { return '+'; };
+
+        var MinusOperator = function() {};
+        MinusOperator.prototype = Object.create(Operator.prototype);
+        MinusOperator.prototype.constructor = MinusOperator;
+
+        MinusOperator.prototype.exec = function(a, b) {
+            return a - b;
+        };
+        MinusOperator.prototype.character = function() { return '-'; };
+
+        var MultiplyOperator = function() {};
+        MultiplyOperator.prototype = Object.create(Operator.prototype);
+        MultiplyOperator.prototype.constructor = MultiplyOperator;
+
+        MultiplyOperator.prototype.exec = function(a, b) {
+            return a * b;
+        };
+        MultiplyOperator.prototype.character = function() { return '*'; };
+
+        var DivideOperator = function() {};
+        DivideOperator.prototype = Object.create(Operator.prototype);
+        DivideOperator.prototype.constructor = DivideOperator;
+
+        DivideOperator.prototype.exec = function(a, b) {
+            return a / b;
+        };
+        DivideOperator.prototype.character = function() { return '/'; };
+        
+        var Digit = function(value) {
+            this.value = value;
+        }
+        Digit.prototype.character = function() { return this.value.toString(); };
+
+        var stack = [];
+
+        function pushOp(op)
+        {
+            if(stack[stack.length-1] != undefined &&
+                (stack[stack.length-1].constructor.name == 'PlusOperator' ||
+                stack[stack.length-1].constructor.name == 'MinusOperator' ||
+                stack[stack.length-1].constructor.name == 'MultiplyOperator' ||
+                stack[stack.length-1].constructor.name == 'DivideOperator')
+            )
+            {
+                stack[stack.length-1] = op;
+            } else if(stack[stack.length-1] == undefined) {
+                pushDigit(new Digit(0))
+                stack.push(op);
+            } else {
+                stack.push(op);
+            }
+        }
+
+        function pushDigit(digit)
+        {
+            var last = stack[stack.length-1];
+
+            if(last != undefined && last.constructor.name == 'Digit')
+            {
+                var val = typeof last.value == 'string' ? last.value : last.value.toString();
+                stack[stack.length-1].value = parseFloat(last.value.toString() + digit.value.toString());
+            } else {
+                stack.push(digit);
+            }
+        }
+
+        function pushDecimal()
+        {
+            var last = stack[stack.length-1];
+
+            if(last != undefined && last.constructor.name == 'Digit')
+            {
+                var val = typeof last.value == 'string' ? last.value : last.value.toString();
+
+                if(val.indexOf('.') == '-1') {
+                    stack[stack.length-1].value = last.value.toString() + '.';
+                }
+
+            } else if(last == undefined) {
+                pushDigit(new Digit(0));
+                pushDecimal();
+            }
+        }
+
+        function calculate(stack)
+        {
+            var out = '';
+            stack.forEach(function(element) {
+                out += element.character();
+            });
+            $('#out').val(eval(out));
+            clear();
+        }
+
+        function show() {
+            if(stack[stack.length-1] == undefined) {
+                pushDigit(new Digit(0));
+            }
+            var out = '';
+            stack.forEach(function(element) {
+                out += element.character();
+            });
+            $('#out').val(out);
+        }
+
+        function clear() {
+            
+            stack = [];
+
+        }
+
+        window.onload = function() {
+
+            $('button').click((e) => {
+                if(e.target.className == 'digit')
+                {
+                    pushDigit(new Digit(e.target.value));
+                    show();
+                }
+                else if(e.target.className == 'operator')
+                {
+                    if(e.target.value == '+') {
+
+                        pushOp(new PlusOperator());
+
+                    } else if(e.target.value == '-') {
+
+                        pushOp(new MinusOperator());
+
+                    } else if(e.target.value == '*') {
+
+                        pushOp(new MultiplyOperator());
+
+                    } else if(e.target.value == '/') {
+
+                        pushOp(new DivideOperator());
+
+                    }
+
+                    show();
+
+                } else if(e.target.className == 'equal-sign')
+                {
+
+                    calculate(stack);
+
+                } else if(e.target.className == 'all-clear')
+                {
+
+                    clear();
+                    show();
+
+                } else if(e.target.className == 'decimal')
+                {
+
+                    pushDecimal();
+                    show();
+
+                }
+                
+            });
+        };
+    </script>
+
+    </body>
+</html>
